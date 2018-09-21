@@ -1,0 +1,9 @@
+{
+  "name": "walkie-talkie",
+  "version": "0.0.1",
+  "description": "Keep in touch with your favrouite ones",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.1.1"
+  }
+}

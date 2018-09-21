@@ -1,0 +1,139 @@
+<style>
+    @import url("https://fonts.googleapis.com/css?family=Roboto:300");
+    body {
+        background-color: #c0392b;
+        font-family: 'Roboto', sans-serif;
+        color: #fff;
+    }
+
+    h1 {
+        font-family: 'Roboto', sans-serif;
+        font-weight: 300;
+        font-size: 2.5rem;
+        text-align: center;
+        color: #fff;
+    }
+
+    .play-button {
+        height: 300px;
+        width: 300px;
+        display: block;
+        margin: 60px auto;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .left {
+        height: 100%;
+        float: left;
+        background-color: #fff;
+        width: 36%;
+        transition: all 0.25s ease;
+        overflow: hidden;
+    }
+
+    .triangle-1 {
+        -webkit-transform: translate(0, -100%);
+        transform: translate(0, -100%);
+    }
+
+    .triangle-2 {
+        -webkit-transform: translate(0, 100%);
+        transform: translate(0, 100%);
+    }
+
+    .triangle-1,
+    .triangle-2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: transparent;
+        width: 0;
+        height: 0;
+        border-right: 300px solid #c0392b;
+        border-top: 150px solid transparent;
+        border-bottom: 150px solid transparent;
+        transition: -webkit-transform 0.25s ease;
+        transition: transform 0.25s ease;
+        transition: transform 0.25s ease, -webkit-transform 0.25s ease;
+    }
+
+    .right {
+        height: 100%;
+        float: right;
+        width: 36%;
+        background-color: #fff;
+        transition: all 0.25s ease;
+    }
+
+    .paused .left {
+        width: 50%;
+    }
+
+    .paused .right {
+        width: 50%;
+    }
+
+    .paused .triangle-1 {
+        -webkit-transform: translate(0, -50%);
+        transform: translate(0, -50%);
+    }
+
+    .paused .triangle-2 {
+        -webkit-transform: translate(0, 50%);
+        transform: translate(0, 50%);
+    }
+</style>
+
+<h1>Browser Walkie-Talkie (Hold to speak)</h1>
+<a class="play-button paused" href="#">
+    <div class="left"></div>
+    <div class="right"></div>
+    <div class="triangle-1"></div>
+    <div class="triangle-2"></div>
+</a>
+<div style="text-align:center">
+    <a>Total user online :</a>
+    <a class="usercount"></a>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    var socket = io();
+    console.log(socket)
+    socket.on('audioMessage', function (audioChunks) {
+        const audioBlob = new Blob(audioChunks);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+    });
+
+    socket.on('user', function (usercount) {
+        $('.usercount').text(usercount)
+    });
+
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            const mediaRecorder = new MediaRecorder(stream);
+            var audioChunks = [];
+            $('.play-button').on('mousedown touchstart', function (e) {
+                mediaRecorder.start();
+                $(this).toggleClass("paused");
+            }).bind('mouseup mouseleave touchend', function () {
+                if (mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    $(this).toggleClass("paused");
+                }
+            });
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+
+            });
+            mediaRecorder.addEventListener("stop", () => {
+                //socket.broadcast.emit('audioMessage', audioChunks);
+                socket.emit('audioMessage', audioChunks);
+                audioChunks = [];
+            });
+        });
+</script>
